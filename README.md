@@ -3,11 +3,13 @@ A regular expression processor, just for fun.
 
 ## Usage
 
-`Compile`: parse a regex string and generate a state machine.
+`StateMachine struct { ... }`: represents a finite state machine to accept a regular language.
 
-`Test`: return true iff a given string is accepted by a given state machine.
+`Compile(reStr string) (sm StateMachine, err error)`: parse a regex string `reStr` and create an equivalent state machine `sm`.
 
-`Match`: return a string which is the first match of a given regex (state machine) in a given string.
+`(sm StateMachine) Test(str string) bool`: returns true iff `sm` accepts `str`.
+
+`(sm StateMachine) Match(str string) (ans string, matchFound bool)`: if `str` contains a string accepted by `sm`, return the first such matching string as `ans`. `matchFound` is true iff any match is found.
 
 ## Syntax
 - `.`: any single character
