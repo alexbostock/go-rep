@@ -37,23 +37,23 @@ type token struct {
 type tokentype int
 
 const (
-	literal tokentype = iota
-	integer
-	openBracket
-	closeBracket
-	openSquare
-	closeSquare
-	openBrace
-	closeBrace
-	star
-	plus
-	opt
-	dollar
-	caret
+	tok_literal tokentype = iota
+	tok_integer
+	tok_openBracket
+	tok_closeBracket
+	tok_openSquare
+	tok_closeSquare
+	tok_openBrace
+	tok_closeBrace
+	tok_star
+	tok_plus
+	tok_opt
+	tok_dollar
+	tok_caret
 )
 
-func parse(reStr string) (syntaxTree ast, err error) {
-	tokens := make(chan rune)
+func Parse(reStr string) (syntaxTree ast, err error) {
+	tokens := make(chan token)
 
 	go lex(reStr, tokens)
 
@@ -62,90 +62,90 @@ func parse(reStr string) (syntaxTree ast, err error) {
 	return buildTree(lookahead, tokens)
 }
 
-func buildTree(lookahead rune, tokens chan rune) (syntaxTree ast, err error) {
-	ast = new(syntaxTree)
-	ast.children = make([]*ast, 1)
+func buildTree(lookahead token, tokens chan token) (syntaxTree ast, err error) {
+	syntaxTree = *new(ast)
+	syntaxTree.children = make([]*ast, 1)
 
 	var parsingAnyOf bool
 	var parsingNumOccurences bool
 
 	for token := range tokens {
-		if parsingNumOccurences && lookahead.label != integer {
-			return ast, errors.Nil("Invalid regex: {} should contain an integer value only")
+		if parsingNumOccurences && lookahead.label != tok_integer {
+			return syntaxTree, errors.New("Invalid regex: {} should contain an integer value only")
 		}
 		switch lookahead.label {
-		case literal:
-			newNode := new(node)
+		case tok_literal:
+			newNode := new(ast)
 			newNode.label = literal
 			newNode.literal = token.lit_val
 			if parsingAnyOf {
-				parent := ast.children[len(ast.children)-1]
+				parent := syntaxTree.children[len(syntaxTree.children)-1]
 				parent.children = append(parent.children, newNode)
 			} else {
-				ast.children = append(ast.children, newNode)
+				syntaxTree.children = append(syntaxTree.children, newNode)
 			}
-		case integer:
+		case tok_integer:
 			if parsingNumOccurences {
-				n = ast.children[len(ast.children)-1]
-				for i = 0; i < token.num_val; i++ {
-					newNode := new(n)
+				n := syntaxTree.children[len(syntaxTree.children)-1]
+				for i := 0; i < token.num_val; i++ {
+					newNode := new(ast)
 					newNode.label = n.label
 					newNode.literal = n.literal
 					newNode.children = n.children
-					ast.children = append(ast.children, newNode)
+					syntaxTree.children = append(syntaxTree.children, newNode)
 				}
 			} else {
-				err = errors.New("Invalid regex: { should be matched with }")
+				err = errors.New("Invalid regex: { should be matched with }p")
 				return
 			}
-		case openBracket:
+		case tok_openBracket:
 			lookahead = <-tokens
 			newNode, err := buildTree(lookahead, tokens)
-			if err {
-				return
+			if err != nil {
+				return syntaxTree, err
 			}
-			ast.children = append(ast.children, newNode)
+			syntaxTree.children = append(syntaxTree.children, &newNode)
 			lookahead = <-tokens
-		case closeBracket:
+		case tok_closeBracket:
 			if parsingAnyOf || parsingNumOccurences {
-				return ast, errors.New("Invalid regex")
+				return syntaxTree, errors.New("Invalid regex")
 			} else {
-				return ast, nil
+				return syntaxTree, nil
 			}
-		case openSquare:
+		case tok_openSquare:
 			parsingAnyOf = true
-		case closeSquare:
+		case tok_closeSquare:
 			parsingAnyOf = false
-		case openBrace:
+		case tok_openBrace:
 			parsingNumOccurences = true
-		case closeBrace:
+		case tok_closeBrace:
 			parsingNumOccurences = false
-		case star:
+		case tok_star:
 			fallthrough
-		case plus:
+		case tok_plus:
 			fallthrough
-		case opt:
-			if len(ast.children) == 0 {
-				return ast, errors.New("Invalid regex")
+		case tok_opt:
+			if len(syntaxTree.children) == 0 {
+				return syntaxTree, errors.New("Invalid regex")
 			}
-			childNode := ast.children[len(ast.children)-1]
-			newNode := new(node)
+			childNode := syntaxTree.children[len(syntaxTree.children)-1]
+			newNode := new(ast)
 			newNode.children = make([]*ast, 1)
 			newNode.children = append(newNode.children, childNode)
 			switch lookahead.label {
-			case star:
+			case tok_star:
 				newNode.label = star
-			case plus:
+			case tok_plus:
 				newNode.label = plus
-			case opt:
+			case tok_opt:
 				newNode.label = optional
 			}
-			ast.children[len(ast.children)-1] = newNode
-		case dollar:
+			syntaxTree.children[len(syntaxTree.children)-1] = newNode
+		case tok_dollar:
 			fallthrough
-		case caret:
-			lookahead.label = literal
-			lookahead.literal = '\n'
+		case tok_caret:
+			lookahead.label = tok_literal
+			lookahead.lit_val = '\n'
 			continue
 		}
 
@@ -169,17 +169,17 @@ var escapedTokens = map[rune]rune{
 }
 
 var tokentypes = map[rune]tokentype{
-	'(': openBracket,
-	')': closeBracket,
-	'[': openSquare,
-	']': closeSquare,
-	'{': openBrace,
-	'}': closeBrace,
-	'*': star,
-	'+': plus,
-	'?': opt,
-	'$': dollar,
-	'^': caret,
+	'(': tok_openBracket,
+	')': tok_closeBracket,
+	'[': tok_openSquare,
+	']': tok_closeSquare,
+	'{': tok_openBrace,
+	'}': tok_closeBrace,
+	'*': tok_star,
+	'+': tok_plus,
+	'?': tok_opt,
+	'$': tok_dollar,
+	'^': tok_caret,
 }
 
 func lex(reStr string, tokens chan token) {
@@ -200,19 +200,19 @@ func lex(reStr string, tokens chan token) {
 				lookahead = c
 				continue
 			}
-			tokens <- token{integer, lexedInt, ' ', nil}
+			tokens <- token{tok_integer, lexedInt, ' ', nil}
 			lexingInt = false
 		}
 
 		if lookahead == '\\' {
 			char, ok := escapedTokens[c]
 			if !ok {
-				tokens <- token{literal, 0, char, errors.New("Invalid token: \\" + string(c))}
+				tokens <- token{tok_literal, 0, char, errors.New("Invalid token: \\" + string(c))}
 				close(tokens)
 				return
 			}
 
-			tokens <- token{literal, 0, char, nil}
+			tokens <- token{tok_literal, 0, char, nil}
 		} else if unicode.IsDigit(lookahead) {
 			lexingInt = true
 			lexedInt = int(lookahead)
@@ -221,7 +221,7 @@ func lex(reStr string, tokens chan token) {
 			if ok {
 				tokens <- token{label, 0, ' ', nil}
 			} else {
-				tokens <- token{literal, 0, lookahead, nil}
+				tokens <- token{tok_literal, 0, lookahead, nil}
 			}
 		}
 

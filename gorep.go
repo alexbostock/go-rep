@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/alexbostock/go-rep/parser"
 )
 
 type StateMachine struct {
@@ -12,6 +14,14 @@ type StateMachine struct {
 }
 
 func Compile(reStr string) (sm StateMachine, err error) {
+	ast, err := parser.Parse(reStr)
+	if err != nil {
+		return *new(StateMachine), err
+	}
+
+	_ = ast
+	// TEMP
+
 	return *new(StateMachine), nil
 }
 
