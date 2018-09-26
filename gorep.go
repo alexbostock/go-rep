@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/alexbostock/stringutil"
 	"os"
 	"strings"
 )
