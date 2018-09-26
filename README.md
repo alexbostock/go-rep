@@ -22,4 +22,4 @@ A regular expression processor, just for fun.
 - `[xyz]`: any one of `x`, `y`, `z`
 - `[a-z]`: any character whose character codes lies between the codes of `a` and `z`, inclusive
 - `\.`, `\+`, `\*`, `\{`, `\}`, `\[`, `\]`, `\^`, `\$`, `\`: special characters
-- `(`, `)`: changing precedence
+- `( ... )`: nesting
