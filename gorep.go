@@ -8,28 +8,20 @@ import (
 	"github.com/alexbostock/go-rep/compiler"
 )
 
-type StateMachine struct {
-	acceptingStates  map[int]bool
-	stateTransitions map[int]map[rune]int
-}
-
-func Compile(reStr string) (sm StateMachine, err error) {
+func Compile(reStr string) (sm compiler.StateMachine, err error) {
 	ast, err := compiler.Parse(reStr)
 	if err != nil {
-		return *new(StateMachine), err
+		return *new(compiler.StateMachine), err
 	}
 
-	_ = ast
-	// TEMP
-
-	return *new(StateMachine), nil
+	return ast.BuildStateMachine()
 }
 
-func (sm StateMachine) Test(str string) bool {
+func Test(sm compiler.StateMachine, str string) bool {
 	return false
 }
 
-func (sm StateMachine) Match(str string) (ans string, matchFound bool) {
+func Match(sm compiler.StateMachine, str string) (ans string, matchFound bool) {
 	return "", false
 }
 
@@ -42,13 +34,13 @@ func main() {
 	switch strings.ToLower(os.Args[1]) {
 	case "test":
 		if sm, err := Compile(os.Args[2]); err == nil {
-			fmt.Println(sm.Test(os.Args[3]))
+			fmt.Println(Test(sm, os.Args[3]))
 		} else {
 			fmt.Println("Invalid regex:", os.Args[2])
 		}
 	case "match":
 		if sm, err := Compile(os.Args[2]); err == nil {
-			if ans, ok := sm.Match(os.Args[3]); ok {
+			if ans, ok := Match(sm, os.Args[3]); ok {
 				fmt.Println("Match found:", ans)
 			}
 			fmt.Println("No match found")

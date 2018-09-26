@@ -7,9 +7,9 @@ A regular expression processor, just for fun.
 
 `Compile(reStr string) (sm StateMachine, err error)`: parse a regex string `reStr` and create an equivalent state machine `sm`.
 
-`(sm StateMachine) Test(str string) bool`: returns true iff `sm` accepts `str`.
+`Test(sm StateMachine, str string) bool`: returns true iff `sm` accepts `str`.
 
-`(sm StateMachine) Match(str string) (ans string, matchFound bool)`: if `str` contains a string accepted by `sm`, return the first such matching string as `ans`. `matchFound` is true iff any match is found.
+`Match(sm StateMachine, str string) (ans string, matchFound bool)`: if `str` contains a string accepted by `sm`, return the first such matching string as `ans`. `matchFound` is true iff any match is found.
 
 ## Syntax
 - `.`: any single character
