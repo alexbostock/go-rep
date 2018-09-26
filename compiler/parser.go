@@ -57,19 +57,19 @@ func Parse(reStr string) (syntaxTree ast, err error) {
 
 	go lex(reStr, tokens)
 
-	lookahead := <-tokens
-
-	return buildTree(lookahead, tokens)
+	return buildTree(tokens)
 }
 
-func buildTree(lookahead token, tokens chan token) (syntaxTree ast, err error) {
+func buildTree(tokens chan token) (syntaxTree ast, err error) {
 	syntaxTree = *new(ast)
-	syntaxTree.children = make([]*ast, 1)
+	syntaxTree.children = make([]*ast, 0, 1)
 
 	var parsingAnyOf bool
 	var parsingNumOccurences bool
 
-	for token := range tokens {
+	for {
+		lookahead, more := <-tokens
+
 		if parsingNumOccurences && lookahead.label != tok_integer {
 			return syntaxTree, errors.New("Invalid regex: {} should contain an integer value only")
 		}
@@ -77,7 +77,7 @@ func buildTree(lookahead token, tokens chan token) (syntaxTree ast, err error) {
 		case tok_literal:
 			newNode := new(ast)
 			newNode.label = literal
-			newNode.literal = token.lit_val
+			newNode.literal = lookahead.lit_val
 			if parsingAnyOf {
 				parent := syntaxTree.children[len(syntaxTree.children)-1]
 				parent.children = append(parent.children, newNode)
@@ -87,7 +87,7 @@ func buildTree(lookahead token, tokens chan token) (syntaxTree ast, err error) {
 		case tok_integer:
 			if parsingNumOccurences {
 				n := syntaxTree.children[len(syntaxTree.children)-1]
-				for i := 0; i < token.num_val; i++ {
+				for i := 0; i < lookahead.num_val; i++ {
 					newNode := new(ast)
 					newNode.label = n.label
 					newNode.literal = n.literal
@@ -99,13 +99,11 @@ func buildTree(lookahead token, tokens chan token) (syntaxTree ast, err error) {
 				return
 			}
 		case tok_openBracket:
-			lookahead = <-tokens
-			newNode, err := buildTree(lookahead, tokens)
+			newNode, err := buildTree(tokens)
 			if err != nil {
 				return syntaxTree, err
 			}
 			syntaxTree.children = append(syntaxTree.children, &newNode)
-			lookahead = <-tokens
 		case tok_closeBracket:
 			if parsingAnyOf || parsingNumOccurences {
 				return syntaxTree, errors.New("Invalid regex")
@@ -130,7 +128,7 @@ func buildTree(lookahead token, tokens chan token) (syntaxTree ast, err error) {
 			}
 			childNode := syntaxTree.children[len(syntaxTree.children)-1]
 			newNode := new(ast)
-			newNode.children = make([]*ast, 1)
+			newNode.children = make([]*ast, 0, 1)
 			newNode.children = append(newNode.children, childNode)
 			switch lookahead.label {
 			case tok_star:
@@ -149,7 +147,9 @@ func buildTree(lookahead token, tokens chan token) (syntaxTree ast, err error) {
 			continue
 		}
 
-		lookahead = <-tokens
+		if !more {
+			break
+		}
 	}
 
 	return
@@ -227,6 +227,9 @@ func lex(reStr string, tokens chan token) {
 
 		lookahead = c
 	}
+
+	// Send an EOF token
+	tokens <- token{tok_literal, 0, ' ', nil}
 
 	close(tokens)
 }
