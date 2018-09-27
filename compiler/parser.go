@@ -25,6 +25,7 @@ const (
 	star
 	optional
 	anyof
+	dot
 )
 
 type token struct {
@@ -50,6 +51,7 @@ const (
 	tok_opt
 	tok_dollar
 	tok_caret
+	tok_dot
 )
 
 func Parse(reStr string) (syntaxTree ast, err error) {
@@ -87,6 +89,12 @@ func buildTree(tokens chan token) (syntaxTree ast, err error) {
 			} else {
 				syntaxTree.children = append(syntaxTree.children, newNode)
 			}
+		case tok_dot:
+			newNode := new(ast)
+			newNode.label = dot
+			newNode.children = make([]*ast, 0)
+
+			syntaxTree.children = append(syntaxTree.children, newNode)
 		case tok_integer:
 			if parsingNumOccurences {
 				n := syntaxTree.children[len(syntaxTree.children)-1]
@@ -215,6 +223,8 @@ func lex(reStr string, tokens chan token) {
 			}
 
 			tokens <- token{tok_literal, 0, char, nil}
+		} else if lookahead == '.' {
+			tokens <- token{tok_dot, 0, ' ', nil}
 		} else if unicode.IsDigit(lookahead) {
 			lexingInt = true
 			lexedInt = int(lookahead)

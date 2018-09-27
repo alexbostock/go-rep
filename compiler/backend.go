@@ -41,6 +41,22 @@ func (tree ast) BuildStateMachine() (sm StateMachine, err error) {
 		sm.StateTransitions[0][tree.literal] = 1
 
 		return sm, nil
+	case dot:
+		sm = *new(StateMachine)
+		sm.AcceptingStates = make(map[int]bool)
+		sm.StateTransitions = make(map[int]map[rune]int)
+
+		sm.AcceptingStates[1] = true
+
+		sm.StateTransitions[0] = make(map[rune]int)
+		sm.StateTransitions[1] = make(map[rune]int)
+
+		// Add a transition for every printable ASCII character
+		for c := ' '; c < '~'; c++ {
+			sm.StateTransitions[0][c] = 1
+		}
+
+		return sm, nil
 	case plus:
 		if len(tree.children) != 1 {
 			return *new(StateMachine), errors.New("Invalid tree: plus node should have exactly one child")

@@ -22,6 +22,7 @@ func TestTest(t *testing.T) {
 		//{"a?a", "aa", true},
 		//{"a?ab", "ab", true},
 		//{"a?ab", "aab", true},
+		//{".+a", "sdga", true},
 
 		{"a+", "a", true},
 		{"a+", "aa", true},
@@ -29,6 +30,11 @@ func TestTest(t *testing.T) {
 		{"a+", "aaab", false},
 		{"a+", "b", false},
 		{"a+", "baaa", false},
+
+		{".", "a", true},
+		{".+", "adgsfhfjyf", true},
+		{".+a", "sdgb", false},
+		{"...", "abc", true},
 	}
 
 	for _, c := range cases {
