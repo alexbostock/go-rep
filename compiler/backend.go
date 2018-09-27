@@ -91,7 +91,6 @@ func (tree ast) BuildStateMachine() (sm StateMachine, err error) {
 		sm.AcceptingStates[0] = true
 
 		// All transitions from the start state are also transitions from all accepting states
-
 		for char, nextState := range sm.StateTransitions[0] {
 			for state, accepting := range sm.AcceptingStates {
 				if !accepting {
@@ -118,7 +117,7 @@ func (tree ast) BuildStateMachine() (sm StateMachine, err error) {
 }
 
 func (sm StateMachine) append(sn StateMachine) {
-	offset := len(sm.AcceptingStates) - 1
+	offset := len(sm.StateTransitions) - 1
 
 	for state, accepting := range sn.AcceptingStates {
 		sm.AcceptingStates[state+offset] = accepting
@@ -135,7 +134,9 @@ func (sm StateMachine) append(sn StateMachine) {
 
 	for i := 0; i <= offset; i++ {
 		if sm.AcceptingStates[i] {
-			sm.AcceptingStates[i] = false
+			if !sn.AcceptingStates[0] {
+				sm.AcceptingStates[i] = false
+			}
 			for char, nextState := range sn.StateTransitions[0] {
 				sm.StateTransitions[i][char] = nextState + offset
 			}

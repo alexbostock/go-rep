@@ -14,6 +14,9 @@ func TestTest(t *testing.T) {
 		{"abc", "abcd", false},
 		{"abcde", "abcd", false},
 		{"a?", "a", true},
+		{"a?b", "b", true},
+		{"a?b", "ab", true},
+		{"a?a", "a", true},
 	}
 
 	for _, c := range cases {
