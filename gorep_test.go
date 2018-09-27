@@ -17,10 +17,18 @@ func TestTest(t *testing.T) {
 		{"a?b", "b", true},
 		{"a?b", "ab", true},
 		{"a?a", "a", true},
+
 		// TODO: pass these
 		//{"a?a", "aa", true},
 		//{"a?ab", "ab", true},
 		//{"a?ab", "aab", true},
+
+		{"a+", "a", true},
+		{"a+", "aa", true},
+		{"a+", "aaa", true},
+		{"a+", "aaab", false},
+		{"a+", "b", false},
+		{"a+", "baaa", false},
 	}
 
 	for _, c := range cases {
