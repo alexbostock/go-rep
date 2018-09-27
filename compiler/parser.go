@@ -69,6 +69,9 @@ func buildTree(tokens chan token) (syntaxTree ast, err error) {
 
 	for {
 		lookahead, more := <-tokens
+		if !more {
+			break
+		}
 
 		if parsingNumOccurences && lookahead.label != tok_integer {
 			return syntaxTree, errors.New("Invalid regex: {} should contain an integer value only")
@@ -146,10 +149,6 @@ func buildTree(tokens chan token) (syntaxTree ast, err error) {
 			lookahead.lit_val = '\n'
 			continue
 		}
-
-		if !more {
-			break
-		}
 	}
 
 	return
@@ -186,6 +185,9 @@ func lex(reStr string, tokens chan token) {
 	var lookahead rune
 	var lexingInt bool
 	var lexedInt int
+
+	// Add an EOF character
+	reStr = reStr + " "
 
 	for _, c := range reStr {
 		if lookahead == 0 {
@@ -227,9 +229,6 @@ func lex(reStr string, tokens chan token) {
 
 		lookahead = c
 	}
-
-	// Send an EOF token
-	tokens <- token{tok_literal, 0, ' ', nil}
 
 	close(tokens)
 }

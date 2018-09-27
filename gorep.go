@@ -18,7 +18,17 @@ func Compile(reStr string) (sm compiler.StateMachine, err error) {
 }
 
 func Test(sm compiler.StateMachine, str string) bool {
-	return false
+	state := 0
+
+	for _, char := range str {
+		var ok bool
+		state, ok = sm.StateTransitions[state][char]
+		if !ok {
+			return false
+		}
+	}
+
+	return sm.AcceptingStates[state]
 }
 
 func Match(sm compiler.StateMachine, str string) (ans string, matchFound bool) {

@@ -5,19 +5,19 @@ import (
 )
 
 type StateMachine struct {
-	acceptingStates  map[int]bool
-	stateTransitions map[int]map[rune]int
+	AcceptingStates  map[int]bool
+	StateTransitions map[int]map[rune]int
 }
 
 func (tree ast) BuildStateMachine() (sm StateMachine, err error) {
 	switch tree.label {
 	case empty:
 		sm = *new(StateMachine)
-		sm.acceptingStates = make(map[int]bool)
-		sm.stateTransitions = make(map[int]map[rune]int)
+		sm.AcceptingStates = make(map[int]bool)
+		sm.StateTransitions = make(map[int]map[rune]int)
 
-		sm.acceptingStates[0] = true
-		sm.stateTransitions[0] = make(map[rune]int)
+		sm.AcceptingStates[0] = true
+		sm.StateTransitions[0] = make(map[rune]int)
 
 		for _, child := range tree.children {
 			subMachine, err := child.BuildStateMachine()
@@ -30,15 +30,15 @@ func (tree ast) BuildStateMachine() (sm StateMachine, err error) {
 		return sm, nil
 	case literal:
 		sm = *new(StateMachine)
-		sm.acceptingStates = make(map[int]bool)
-		sm.stateTransitions = make(map[int]map[rune]int)
+		sm.AcceptingStates = make(map[int]bool)
+		sm.StateTransitions = make(map[int]map[rune]int)
 
-		sm.acceptingStates[1] = true
+		sm.AcceptingStates[1] = true
 
-		sm.stateTransitions[0] = make(map[rune]int)
-		sm.stateTransitions[1] = make(map[rune]int)
+		sm.StateTransitions[0] = make(map[rune]int)
+		sm.StateTransitions[1] = make(map[rune]int)
 
-		sm.stateTransitions[0][tree.literal] = 1
+		sm.StateTransitions[0][tree.literal] = 1
 
 		return sm, nil
 	case plus:
@@ -52,13 +52,13 @@ func (tree ast) BuildStateMachine() (sm StateMachine, err error) {
 		}
 
 		// Accepting states should act as start states
-		for state, accepting := range sm.acceptingStates {
+		for state, accepting := range sm.AcceptingStates {
 			if !accepting {
 				continue
 			}
 
-			for char, nextState := range sm.stateTransitions[0] {
-				sm.stateTransitions[state][char] = nextState
+			for char, nextState := range sm.StateTransitions[0] {
+				sm.StateTransitions[state][char] = nextState
 			}
 		}
 
@@ -74,7 +74,7 @@ func (tree ast) BuildStateMachine() (sm StateMachine, err error) {
 		}
 
 		// The start state is an accepting state
-		sm.acceptingStates[0] = true
+		sm.AcceptingStates[0] = true
 
 		return sm, err
 	case star:
@@ -88,18 +88,18 @@ func (tree ast) BuildStateMachine() (sm StateMachine, err error) {
 		}
 
 		// The start state is an accepting state
-		sm.acceptingStates[0] = true
+		sm.AcceptingStates[0] = true
 
 		// All transitions from the start state are also transitions from all accepting states
 
-		for char, nextState := range sm.stateTransitions[0] {
-			for state, accepting := range sm.acceptingStates {
+		for char, nextState := range sm.StateTransitions[0] {
+			for state, accepting := range sm.AcceptingStates {
 				if !accepting {
 					continue
 				}
 
 				// TODO: this won't work if state already has a transition for char (to a different state)
-				sm.stateTransitions[state][char] = nextState
+				sm.StateTransitions[state][char] = nextState
 			}
 		}
 
@@ -118,5 +118,27 @@ func (tree ast) BuildStateMachine() (sm StateMachine, err error) {
 }
 
 func (sm StateMachine) append(sn StateMachine) {
-	// TODO
+	offset := len(sm.AcceptingStates) - 1
+
+	for state, accepting := range sn.AcceptingStates {
+		sm.AcceptingStates[state+offset] = accepting
+	}
+
+	for state, transitions := range sn.StateTransitions {
+		sm.StateTransitions[state+offset] = make(map[rune]int)
+		for char, nextState := range transitions {
+			sm.StateTransitions[state+offset][char] = nextState + offset
+		}
+	}
+
+	// This has the same problem described above in case star:
+
+	for i := 0; i <= offset; i++ {
+		if sm.AcceptingStates[i] {
+			sm.AcceptingStates[i] = false
+			for char, nextState := range sn.StateTransitions[0] {
+				sm.StateTransitions[i][char] = nextState + offset
+			}
+		}
+	}
 }
