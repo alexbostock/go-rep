@@ -7,7 +7,14 @@ func TestTest(t *testing.T) {
 		regex string
 		str   string
 		want  bool
-	}{}
+	}{
+		{"a", "a", true},
+		{"abc", "abc", true},
+		{"abcde", "abcde", true},
+		{"abc", "abcd", false},
+		{"abcde", "abcd", false},
+		{"a?", "a", true},
+	}
 
 	for _, c := range cases {
 		sm, err := Compile(c.regex)
@@ -17,7 +24,7 @@ func TestTest(t *testing.T) {
 
 		test := Test(sm, c.str)
 		if test != c.want {
-			t.Errorf(c.regex, c.str, "match wrong")
+			t.Errorf(c.regex, c.str)
 		}
 	}
 }
