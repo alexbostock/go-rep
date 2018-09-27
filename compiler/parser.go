@@ -79,6 +79,13 @@ func buildTree(tokens chan token) (syntaxTree ast, err error) {
 			return syntaxTree, errors.New("Invalid regex: {} should contain an integer value only")
 		}
 		switch lookahead.label {
+		case tok_dollar:
+			fallthrough
+		case tok_caret:
+			lookahead.label = tok_literal
+			lookahead.lit_val = '\n'
+
+			fallthrough
 		case tok_literal:
 			newNode := new(ast)
 			newNode.label = literal
@@ -150,12 +157,6 @@ func buildTree(tokens chan token) (syntaxTree ast, err error) {
 				newNode.label = optional
 			}
 			syntaxTree.children[len(syntaxTree.children)-1] = newNode
-		case tok_dollar:
-			fallthrough
-		case tok_caret:
-			lookahead.label = tok_literal
-			lookahead.lit_val = '\n'
-			continue
 		}
 	}
 
